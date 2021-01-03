@@ -80,10 +80,16 @@ class OpenBattleMapBuilder:
         return security_group
 
     def get_task_definition(self, vpc, security_group):
-        task_definition = FargateTaskDefinition(self._stack, self._name, memory_limit_mib=512, cpu=256)
+        task_definition = FargateTaskDefinition(self._stack, self._name, memory_limit_mib=512, cpu=256, )
         task_definition.add_volume(name=DATA_VOLUME, efs_volume_configuration=self.get_volume(vpc, security_group))
         image = ContainerImage.from_asset(directory=self._config.docker_dir)
-        container = ContainerDefinition(self._stack, 'obm_container', task_definition=task_definition, image=image)
+        container = ContainerDefinition(
+            self._stack,
+            'obm_container',
+            task_definition=task_definition,
+            image=image,
+            environment={'ENABLE_TLS': 'yes'},
+        )
         container.add_mount_points(self.get_mount_point())
         container.add_port_mappings(
             PortMapping(container_port=HTTP_PORT, host_port=HTTP_PORT),
