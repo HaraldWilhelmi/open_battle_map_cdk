@@ -1,9 +1,15 @@
+from os.path import dirname, join
+
 from aws_cdk import core
 from aws_cdk.aws_ec2 import SecurityGroup, Peer, Port, Protocol, Vpc
 from aws_cdk.aws_ecs import FargateTaskDefinition, FargateService, Cluster, ContainerImage, EfsVolumeConfiguration, \
     ContainerDefinition, MountPoint, FargatePlatformVersion, PortMapping
 from aws_cdk.aws_efs import FileSystem, LifecyclePolicy
+from aws_cdk.aws_iam import PolicyStatement, Effect
 from aws_cdk.core import Tags
+from aws_cdk.aws_lambda import Function, Runtime, Code
+from aws_cdk.aws_events import Rule as EventRule, EventPattern
+from aws_cdk.aws_events_targets import LambdaFunction as LambdaEventTarget
 
 from open_battle_map_cdk.config import get_config
 
@@ -29,6 +35,10 @@ class OpenBattleMapBuilder:
         self._stack = stack
 
     def do_it(self):
+        self.deploy_aws_ecs_public_dns()
+        self.create_ecs_cluster()
+
+    def create_ecs_cluster(self):
         vpc = self.get_vpc()
         cluster = self.get_cluster(vpc)
         web_security_group = self.get_web_security_group(vpc)
@@ -131,3 +141,50 @@ class OpenBattleMapBuilder:
         )
         self._tag_it(service)
         return service
+
+    def deploy_aws_ecs_public_dns(self):
+        code_path = join(dirname(dirname(__file__)), 'build', 'aws-ecs-public-dns.zip')
+        func = Function(
+            self._stack,
+            'public_dns',
+            runtime=Runtime.NODEJS_12_X,
+            handler='src/update-task-dns.handler',
+            memory_size=128,
+            code=Code.from_asset(path=code_path)
+        )
+        self._tag_it(func)
+        func.add_to_role_policy(statement=self.get_public_dns_policy_statement())
+        self.create_event_rule(func)
+
+    def create_event_rule(self, func):
+        event_pattern = EventPattern(
+            source=['aws.ecs'],
+            detail_type=['ECS Task State Change'],
+            detail={
+                'desiredStatus': ['RUNNING'],
+                'lastStatus': ['RUNNING'],
+            }
+        )
+        rule = EventRule(
+            self._stack,
+            'public_dns_rule',
+            event_pattern=event_pattern,
+            enabled=True,
+        )
+
+        event_target = LambdaEventTarget(handler=func)
+        rule.add_target(event_target)
+        self._tag_it(rule)
+
+    @staticmethod
+    def get_public_dns_policy_statement():
+        statement = PolicyStatement(
+            effect=Effect.ALLOW, actions=[
+                "ec2:DescribeNetworkInterfaces",
+                "ecs:DescribeClusters",
+                "ecs:ListTagsForResource",
+                "route53:ChangeResourceRecordSets",
+            ],
+            resources=['*'],
+        )
+        return statement
