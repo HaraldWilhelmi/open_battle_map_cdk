@@ -1,58 +1,29 @@
+# Deploy Open Battle Map on AWS
 
-# Welcome to your CDK Python project!
+## What is this?
 
-This is a blank project for Python development with CDK.
+This code is meant to deploy the Open Battle Map application for private use
+in a *cost-efficient* way on Amazon Web Services. See also:
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+ * https://github.com/HaraldWilhelmi/open_battle_map
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+It is only separated from that code because it needs its own Python VirtualEnv
+and PyCHarm does not like to have two of those in the same project.
 
-To manually create a virtualenv on MacOS and Linux:
+## Alternatives
 
-```
-$ python3 -m venv .venv
-```
+For a more professional setup consider replacing the AWS Lambda to assign
+the DNS name by AWS Application Load Balancer. For my private setup I considered
+that option to be too costly.
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+Please note that a true cluster setup with multiple active application servers/containers
+would also require some way to ensure that the data is not corrupted by parallel
+access. The easiest way to do so would be to configure the load balancer to distribute
+the work load based on the Map Set UUID.
 
-```
-$ source .venv/bin/activate
-```
+## Credits
 
-If you are a Windows platform, you would activate the virtualenv like this:
+Many thanks to Andreas Pasch, who helped me (and maybe you too) to save 18 bucks
+per month by *not* using an AWS ALB.
 
-```
-% .venv\Scripts\activate.bat
-```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
-```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
-
-## Useful commands
-
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
-
-Enjoy!
+See https://github.com/foby/aws-ecs-public-dns for details.

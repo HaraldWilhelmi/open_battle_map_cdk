@@ -6,6 +6,7 @@ __pycache__
 .idea
 .venv
 *.egg-info
+aws-ecs-public-dns
 
 # CDK asset staging directory
 .cdk.staging
