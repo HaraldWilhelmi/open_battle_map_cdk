@@ -22,7 +22,7 @@ and PyCHarm does not like to have two of those in the same project.
      of the open_battle_map repo.
    * Run ./deploy/prepare_build.sh in the other repository. Make sure that it terminates
      successfully.
-   * Create a configuration file like draft below. The Zone ID is visible in the Hosted
+   * Create a configuration file like the template below. The Zone ID is visible in the Hosted
      Zones overview page of Route 53:
     
             [DEFAULT]
