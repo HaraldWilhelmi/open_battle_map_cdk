@@ -1,4 +1,5 @@
 from os.path import expanduser, join, isfile, dirname
+from os import environ
 from sys import stderr
 from typing import Optional
 from pydantic import BaseModel
@@ -12,13 +13,18 @@ class Config(BaseModel, ):
     domain: str
     tag_key: str = 'application'
     tag_value: Optional[str]
+    letsencrypt_url: str = 'https://acme-v02.api.letsencrypt.org/directory'
 
 
 _config: Optional[Config] = None
 
 
 def get_config_file_name() -> str:
-    return join(expanduser('~'), '.open_battle_map_cdk')
+    candidate = environ.get('OBM_CDK_CONFIG')
+    if candidate is None or candidate == '':
+        print('Please set the OBM_CDK_CONFIG environment variable!', file=stderr)
+        exit(1)
+    return candidate
 
 
 def get_config():

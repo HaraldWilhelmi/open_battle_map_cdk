@@ -3,7 +3,7 @@ from os.path import dirname, join
 from aws_cdk import core
 from aws_cdk.aws_ec2 import SecurityGroup, Peer, Port, Protocol, Vpc
 from aws_cdk.aws_ecs import FargateTaskDefinition, FargateService, Cluster, ContainerImage, EfsVolumeConfiguration, \
-    ContainerDefinition, MountPoint, FargatePlatformVersion, PortMapping
+    ContainerDefinition, MountPoint, FargatePlatformVersion, PortMapping, AwsLogDriver
 from aws_cdk.aws_efs import FileSystem, LifecyclePolicy
 from aws_cdk.aws_iam import PolicyStatement, Effect
 from aws_cdk.core import Tags
@@ -88,7 +88,8 @@ class OpenBattleMapBuilder:
             'obm_container',
             task_definition=task_definition,
             image=image,
-            environment={'ENABLE_TLS': 'yes'},
+            environment=self.get_environment(),
+            logging=AwsLogDriver(stream_prefix=self._config.name),
         )
         container.add_mount_points(self.get_mount_point())
         container.add_port_mappings(
@@ -99,6 +100,12 @@ class OpenBattleMapBuilder:
         self._tag_it(container)
         self._tag_it(task_definition)
         return task_definition
+
+    def get_environment(self):
+        return {
+            'TLS_DOMAIN': self._name + '.' + self._config.domain,
+            'LETSENCRYPT_URL': self._config.letsencrypt_url,
+        }
 
     def get_volume(self, vpc, web_security_group):
         nfs_security_group = self.get_nfs_security_group(web_security_group, vpc)
@@ -141,7 +148,7 @@ class OpenBattleMapBuilder:
             cluster=cluster,
             task_definition=task_definition,
             assign_public_ip=True,
-            service_name='obm',
+            service_name=self._config.name,
             platform_version=FargatePlatformVersion.VERSION1_4,
             security_groups=[security_group],
         )
