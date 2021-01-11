@@ -46,7 +46,7 @@ class OpenBattleMapBuilder:
         self.get_service(cluster, task_definition, web_security_group)
 
     def get_vpc(self):
-        vpc = Vpc(self._stack, self._name + '_vpc', cidr='10.0.0.0/16')
+        vpc = Vpc(self._stack, self._name + '_vpc', cidr='10.0.0.0/16', nat_gateways=0)
         self._tag_it(vpc)
         return vpc
 
