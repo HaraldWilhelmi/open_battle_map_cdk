@@ -71,6 +71,11 @@ would also require some way to ensure that the data is not corrupted by parallel
 access. The easiest way to do so would be to configure the load balancer to distribute
 the work load based on the Map Set UUID.
 
+## Copyright
+
+This software was written by Harald Wilhelmi. It may be used and distributed
+under the terms of the GNU GENERAL PUBLIC LICENSE Version 3.
+
 ## Credits
 
 Many thanks to Andreas Pasch, who helped me (and maybe you too) to save 18 bucks
