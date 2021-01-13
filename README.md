@@ -22,21 +22,20 @@ and PyCHarm does not like to have two of those in the same project.
      of the open_battle_map repo.
    * Run ./deploy/prepare_build.sh in the other repository. Make sure that it terminates
      successfully.
-   * Create a configuration file like the template below. The Zone ID is visible in the Hosted
-     Zones overview page of Route 53:
+   * Create the configuration file ~/.obm_cdk_config with at least lines given below.
+     The Zone ID is visible in the Hosted Zones overview page of Route 53:
     
-            [DEFAULT]
-            name = <the name of the thing>
+            [CLUSTER]
             hosted_zone_id = <your Route 53 Zone ID>
             domain = <your Route 53 domain>
     
-   * Export the following environment variables as you need them:
+   * Export the following environment variable as you need (example for aws-vault users):
     
-            OBM_AWS_COMMAND_PREFIX=aws-vault exec <your profile> --
-            OBM_CDK_CONFIG=<your config file>
+            export OBM_AWS_COMMAND_PREFIX=aws-vault exec <your profile> --
+ 
    * Run:
     
-            ./setup_cluster.sh
+            ./setup_everything.sh
     
    * Get the Admin Secret:
     
@@ -45,20 +44,109 @@ and PyCHarm does not like to have two of those in the same project.
     
    * Have fun:
     
-            https://<the name of the thing>.<your Route 53 domain>
+            https://obm.<your Route 53 domain>
     
 ## Dirty Details
 
-For more configuration options have a look at `open_battle_map_cdk/config.py`.
-Consider setting `tag_key`/`tag_value` to help you in the AWS Cost Explore.
-Basically this setup consists of the following components:
+### General Setup
 
- * A single ECS container with the application and nginx to TLS termination.
- * A data volume for all the persistent data (obm_data: config + Map Sets, tls:
-   Keys and Certificate).
- * An AWS Lambda, which sets up DNS for your container, when it is started
-   or replaced (see https://github.com/foby/aws-ecs-public-dns).
- * Letsencrypt supplies the TLS certificate. 
+If you followed the Quick Start instructions you got three Cloudformation Stacks:
+
+ * ObmCluster: A VPC, a ECS Cluster, and Lambda which assigns public DNS names to
+   freshly deployed containers. The trick with this setup is, that it comes
+   without load balancers and NAT gateways. This reduces costs dramatically.
+ * ObmVolume: A separate Stack with the volume for the dynamic data and its security
+   group. Theoretically we could place the volume in the same volume group as the
+   container because it will not be destroyed on destruction of the Stack.
+   However, it's security group would - and  presently CDK is not able to import
+   an EFS volume without a security group. So I found it easier and safer to
+   put it into a separate stack. 
+ * ObmContainer: The stack with the actual Docker Container.
+
+These containers are coupled by Cloudformation Outputs. Nobody depends on the Container
+Stack. That one can safely be destroyed without destroying your data or tempering with
+the cluster, which may run other containers.
+
+### Configuration Files
+
+That is all controlled by two configuration files, which both default to the same path
+`~/.obm_cdk_config`. If you need to separate them or just have more than one setup to
+maintain, you may define the following environment variables:
+
+ * OBM_CDK_CLUSTER_CONFIG: Points to the configuration file for the Cluster Stack.
+   The file should contain a `[CLUSTER]` section - like the one from the
+   Quick Start instructions.
+ * OBM_CDK_CONTAINER_CONFIG: Used for the other two stacks. The file should contain
+   a `[VOLUME]` and a `[CONTAINER]` section.
+
+This setup allows you to have more than one OBM containers, which may or may not
+share the same cluster. You just have to ensure that:
+
+ 1. You have one cluster configuration file for each cluster.
+    
+ 2. You have one container configuration file for each Open Battle Map instance
+    (volume+container).
+    
+ 3. You defined in each section (CLUSTER/VOLUME/CONTAINER) a unique 'stack_name'.
+
+ 4. All the Open Battle Map instances have a unique 'service_name' (CONTAINER section).
+
+
+### Common Configuration Parameters
+
+Each of the configuration sections may have the following parameters:
+
+ * **stack_name**: Name of the Cloud Formation Stack defined by this piece of
+   configuration Defaults: ObmCluster/ObmVolume/ObmContainer.
+ * **tag_key**: Name of tag the resource of the stack will be marked this.
+   This tag is useful to find your way through the AWS Cost Explorer.
+   To actually use the tag there, you need to activate it in the Billing
+   Dashboard. (Default: application).
+ * **tag_value**: The value to set the above Tag. Default: The name of the stack.
+
+### Cluster Configuration
+
+The cluster section has the following parameters:
+
+ * **hosted_zone_id**: The ID of the AWS Route 53 Zone to be used for registration
+   of the DNS name. Required - no default.
+ * **domain**: The DNS domain belonging to the AWS Route 53 Zone. Required - no default.
+
+### Volume Configuration
+
+ * **volume_name**: Name of the volume. Default: obm_data.
+
+### Container Configuration
+
+ * **service_name**: Name of the service, which is created by the container. This
+   name will be combined with the domain from the Cluster Configuration to create
+   the DNS name.
+ * **docker_dir**: The place the Dockerfile for the image will be searched for.
+   By default, it will be assumed that the open_battle_map repository is checked
+   out in the same parent directory as this repository.
+ * **letsencrypt_url**: The URL used to contact Lets Encrypt. If you need to test
+   TLS related stuff, please switch to their staging environment
+   https://acme-staging-v02.api.letsencrypt.org/directory. Otherwise, you will quickly
+   hit the rate limit. Default: https://acme-v02.api.letsencrypt.org/directory'
+ * **use_tls**: This option allows you to switch of TLS. This is useful to recover
+   a container form backup without revoking the old certificates:
+   
+    * Create new Container Stack with use_tls=False
+    * Ssh to new container to unpack your backup to /data,
+    * Re-run CDK with use_tls=True 
+  
+   Default: True
+
+### Clean Up
+
+If you want to remove the setup need to destroy the Stack in this order:
+
+        cdk destroy <Container Stack>
+        cdk destroy <Volume Stack>
+        cdk destroy <Cluster Stack>
+
+You may have to prefix your commands with your `OBM_AWS_COMMAND_PREFIX` to make them work.
+This will not delete any volumes. Best check manually in the AWS Web GUI. Search for EFS.
 
 ## Alternatives
 

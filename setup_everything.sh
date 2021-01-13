@@ -21,12 +21,11 @@ mkdir -p build
 
 echo '#######################################################################'
 echo '###'
-echo "### OBM_CDK_CONGIG=$OBM_CDK_CONFIG"
-echo "### OBM_AWS_COMMAND_PREFIX=$OBM_AWS_COMMAND_PREFIX" 
+echo "### OBM_CDK_CLUSTER_CONFIG=${OBM_CDK_CLUSTER_CONFIG:-<not set>}"
+echo "### OBM_CDK_CONTAINER_CONFIG=${OBM_CDK_CONTAINER_CONFIG:-<not set>}"
+echo "### OBM_AWS_COMMAND_PREFIX=${OBM_AWS_COMMAND_PREFIX:-<not set>}"
 echo '###'
 echo '#######################################################################'
 
-
-cdk synth
-$OBM_AWS_COMMAND_PREFIX cdk deploy
+$OBM_AWS_COMMAND_PREFIX cdk deploy --all
 
