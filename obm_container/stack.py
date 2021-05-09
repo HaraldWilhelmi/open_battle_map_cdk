@@ -59,7 +59,7 @@ class _Builder:
         return security_group
 
     def get_task_definition(self, security_group):
-        task_definition = FargateTaskDefinition(self._stack, self._name, memory_limit_mib=512, cpu=256, )
+        task_definition = FargateTaskDefinition(self._stack, self._name, memory_limit_mib=512, cpu=256)
         task_definition.add_volume(name=DATA_VOLUME, efs_volume_configuration=self.get_volume(security_group))
         image = ContainerImage.from_asset(directory=self._config.docker_dir)
         container = ContainerDefinition(
@@ -110,6 +110,7 @@ class _Builder:
             service_name=self._config.service_name,
             platform_version=FargatePlatformVersion.VERSION1_4,
             security_groups=[security_group],
+            enable_ecs_managed_tags=True,
         )
         self._tag_it(service)
         return service
