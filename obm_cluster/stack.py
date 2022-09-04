@@ -1,10 +1,10 @@
 from os.path import dirname, join
 
-from aws_cdk import core
-from aws_cdk.aws_ec2 import Vpc
+import aws_cdk as cdk
+from constructs import Construct
+import aws_cdk.aws_ec2 as ec2
 from aws_cdk.aws_ecs import Cluster
 from aws_cdk.aws_iam import PolicyStatement, Effect
-from aws_cdk.core import Tags, CfnOutput
 from aws_cdk.aws_lambda import Function, Runtime, Code
 from aws_cdk.aws_events import Rule as EventRule, EventPattern
 from aws_cdk.aws_events_targets import LambdaFunction as LambdaEventTarget
@@ -15,15 +15,15 @@ from obm_cluster.config import get_cluster_config
 MAX_AVAILABILITY_ZONES = 2
 
 
-class ObmClusterStack(core.Stack):
-    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+class ObmClusterStack(cdk.Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         builder = _Builder(self)
         builder.do_it()
 
 
 class _Builder:
-    def __init__(self, stack: core.Stack):
+    def __init__(self, stack: cdk.Stack):
         self._config = get_cluster_config()
         self._name = self._config.stack_name
         self._stack = stack
@@ -34,7 +34,9 @@ class _Builder:
         self.get_cluster(vpc)
 
     def get_vpc(self):
-        vpc = Vpc(self._stack, self._name + 'Vpc', cidr='10.0.0.0/16', nat_gateways=0, max_azs=MAX_AVAILABILITY_ZONES)
+        vpc = ec2.Vpc(
+            self._stack, self._name + 'Vpc', cidr='10.0.0.0/16', nat_gateways=0, max_azs=MAX_AVAILABILITY_ZONES
+        )
         self._export('VpcId', vpc.vpc_id)
         self._export('VpcCidrBlock', vpc.vpc_cidr_block)
         for i in range(MAX_AVAILABILITY_ZONES):
@@ -45,15 +47,15 @@ class _Builder:
         return vpc
 
     def _export(self, name, value):
-        CfnOutput(self._stack, name, value=value, export_name=self._name+name)
+        cdk.CfnOutput(self._stack, name, value=value, export_name=self._name+name)
 
     def _tag_it(self, it):
-        Tags.of(it).add(self._config.tag_key, self._config.tag_value)
+        cdk.Tags.of(it).add(self._config.tag_key, self._config.tag_value)
 
     def get_cluster(self, vpc):
         cluster = Cluster(self._stack, self._name, vpc=vpc)
-        Tags.of(cluster).add('hostedZoneId', self._config.hosted_zone_id)
-        Tags.of(cluster).add('domain', self._config.domain)
+        cdk.Tags.of(cluster).add('hostedZoneId', self._config.hosted_zone_id)
+        cdk.Tags.of(cluster).add('domain', self._config.domain)
         self._export('ClusterName', cluster.cluster_name)
         self._tag_it(cluster)
         return cluster
@@ -63,7 +65,7 @@ class _Builder:
         func = Function(
             self._stack,
             'public_dns',
-            runtime=Runtime.NODEJS_12_X,
+            runtime=Runtime.NODEJS_16_X,
             handler='src/update-task-dns.handler',
             memory_size=128,
             code=Code.from_asset(path=code_path)

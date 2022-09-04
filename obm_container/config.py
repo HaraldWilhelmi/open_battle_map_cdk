@@ -1,9 +1,7 @@
-from os.path import join, isfile, dirname, expanduser
-from os import environ
+from os.path import join, isfile, dirname
 from sys import stderr
 from typing import Optional
-from pydantic import BaseModel, validator
-from configparser import ConfigParser
+from pydantic import BaseModel
 
 from common.config import get_config_file_name, get_config_as_dict
 

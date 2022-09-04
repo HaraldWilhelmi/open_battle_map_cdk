@@ -1,4 +1,4 @@
-#!/home/wilhelmh/projects/open_battle_map_cdk/.venv/bin/python
+#!/home/wilhelmh/projects/open_battle_map_cdk/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

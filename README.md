@@ -33,6 +33,10 @@ and PyCHarm does not like to have two of those in the same project.
     
             export OBM_AWS_COMMAND_PREFIX=aws-vault exec <your profile> --
  
+   * Before deploying the first time initialize the CDK:
+
+            $OBM_AWS_COMMAND_PREFIX cdk bootstrap
+
    * Run:
     
             ./setup_everything.sh

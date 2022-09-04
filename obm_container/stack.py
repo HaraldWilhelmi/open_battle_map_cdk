@@ -1,8 +1,8 @@
-from aws_cdk import core
-from aws_cdk.aws_ec2 import SecurityGroup, Peer, Port, Protocol
+import aws_cdk as cdk
+import aws_cdk.aws_ec2 as ec2
+from constructs import Construct
 from aws_cdk.aws_ecs import FargateTaskDefinition, FargateService, ContainerImage, EfsVolumeConfiguration, \
     ContainerDefinition, MountPoint, FargatePlatformVersion, PortMapping, AwsLogDriver
-from aws_cdk.core import Tags
 
 from common.link_stacks import get_vpc, get_cluster, get_file_system
 from obm_cluster.config import get_cluster_config
@@ -15,15 +15,15 @@ SSH_PORT = 22
 NFS_PORT = 2049
 
 
-class ObmContainerStack(core.Stack):
-    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+class ObmContainerStack(cdk.Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         builder = _Builder(self)
         builder.do_it()
 
 
 class _Builder:
-    def __init__(self, stack: core.Stack):
+    def __init__(self, stack: cdk.Stack):
         self._config = get_container_config()
         self._cluster_config = get_cluster_config()
         self._name = self._config.stack_name
@@ -37,24 +37,24 @@ class _Builder:
         self.get_service(cluster, task_definition, web_security_group)
 
     def _tag_it(self, it):
-        Tags.of(it).add(self._config.tag_key, self._config.tag_value)
+        cdk.Tags.of(it).add(self._config.tag_key, self._config.tag_value)
 
     def get_web_security_group(self, vpc):
-        security_group = SecurityGroup(
+        security_group = ec2.SecurityGroup(
             self._stack,
             'obm_web',
             vpc=vpc,
             allow_all_outbound=True,
         )
         for port_number in [SSH_PORT, HTTP_PORT, HTTPS_PORT]:
-            port = Port(
+            port = ec2.Port(
                 from_port=port_number,
                 to_port=port_number,
-                protocol=Protocol.TCP,
+                protocol=ec2.Protocol.TCP,
                 string_representation=f"Port {port_number}"
             )
-            security_group.add_ingress_rule(peer=Peer.any_ipv4(), connection=port)
-            security_group.add_ingress_rule(peer=Peer.any_ipv6(), connection=port)
+            security_group.add_ingress_rule(peer=ec2.Peer.any_ipv4(), connection=port)
+            security_group.add_ingress_rule(peer=ec2.Peer.any_ipv6(), connection=port)
         self._tag_it(security_group)
         return security_group
 

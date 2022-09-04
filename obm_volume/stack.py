@@ -1,22 +1,21 @@
-from aws_cdk import core
-from aws_cdk.aws_ec2 import SecurityGroup
-from aws_cdk.aws_ecs import EfsVolumeConfiguration
+import aws_cdk as cdk
+import aws_cdk.aws_ec2 as ec2
+from constructs import Construct
 from aws_cdk.aws_efs import FileSystem, LifecyclePolicy
-from aws_cdk.core import Tags, CfnOutput
 
 from common.link_stacks import get_vpc
 from obm_volume.config import get_volume_config
 
 
-class ObmVolumeStack(core.Stack):
-    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+class ObmVolumeStack(cdk.Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         builder = _Builder(self)
         builder.do_it()
 
 
 class _Builder:
-    def __init__(self, stack: core.Stack):
+    def __init__(self, stack: cdk.Stack):
         self._config = get_volume_config()
         self._stack = stack
 
@@ -36,13 +35,13 @@ class _Builder:
         return file_system
 
     def _tag_it(self, it):
-        Tags.of(it).add(self._config.tag_key, self._config.tag_value)
+        cdk.Tags.of(it).add(self._config.tag_key, self._config.tag_value)
 
     def _export(self, name, value):
-        CfnOutput(self._stack, name, value=value, export_name=self._config.stack_name+name)
+        cdk.CfnOutput(self._stack, name, value=value, export_name=self._config.stack_name+name)
 
     def get_nfs_security_group(self, vpc):
-        nfs_security_group = SecurityGroup(
+        nfs_security_group = ec2.SecurityGroup(
             self._stack,
             'obm_efs',
             vpc=vpc,

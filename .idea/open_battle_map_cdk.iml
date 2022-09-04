@@ -7,14 +7,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
-  <component name="PyNamespacePackagesService">
-    <option name="namespacePackageFolders">
-      <list>
-        <option value="$MODULE_DIR$/obm_cluster" />
-        <option value="$MODULE_DIR$/obm_container" />
-        <option value="$MODULE_DIR$/obm_volume" />
-        <option value="$MODULE_DIR$/common" />
-      </list>
-    </option>
+  <component name="PyDocumentationSettings">
+    <option name="format" value="PLAIN" />
+    <option name="myDocStringFormat" value="Plain" />
   </component>
 </module>

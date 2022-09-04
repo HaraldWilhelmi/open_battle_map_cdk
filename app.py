@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+import os
 
-from aws_cdk import core
+import aws_cdk as cdk
 
 from obm_cluster.config import get_cluster_config
 from obm_container.config import get_container_config
@@ -13,7 +14,8 @@ cluster_config = get_cluster_config()
 volume_config = get_volume_config()
 container_config = get_container_config()
 
-app = core.App()
+app = cdk.App()
+
 cluster = ObmClusterStack(app, cluster_config.stack_name)
 volume = ObmVolumeStack(app, volume_config.stack_name)
 volume.add_dependency(cluster)
