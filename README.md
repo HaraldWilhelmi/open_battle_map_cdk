@@ -145,12 +145,11 @@ The cluster section has the following parameters:
 
 If you want to remove the setup need to destroy the Stack in this order:
 
-        cdk destroy <Container Stack>
-        cdk destroy <Volume Stack>
-        cdk destroy <Cluster Stack>
+        $OBM_AWS_COMMAND_PREFIX cdk destroy <Container Stack>
+        $OBM_AWS_COMMAND_PREFIX cdk destroy <Volume Stack>
+        $OBM_AWS_COMMAND_PREFIX cdk destroy <Cluster Stack>
 
-You may have to prefix your commands with your `OBM_AWS_COMMAND_PREFIX` to make them work.
-This will not delete any volumes. Best check manually in the AWS Web GUI. Search for EFS.
+This will not delete any volumes. Best check manually in the AWS Web GUI (EFS - elastic file system).
 
 ## Alternatives
 
